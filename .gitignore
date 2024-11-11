@@ -1,8 +1,9 @@
-# Compiled class file
-*.class
-
-# Log file
+**/.idea/*
+**/target/*
+**/data/*
 *.log
+
+**/o-mj3r8-student129-10312024.json
 
 # BlueJ files
 *.ctxt

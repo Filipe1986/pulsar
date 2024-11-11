@@ -1,0 +1,27 @@
+Code Samples for StreamNative Academy's Getting Started with Pulsar on StreamNative
+courses.streamnative.io
+
+SUBSCRIPTION TYPES
+Show where to get SNProducer and SNConsumer from UI.
+Make small changes to SNProducer and SNConsumer to demonstrate Exclusive, Failover, and Shared Subscriptions Types.
+Exclusive: run multiple consumers, see error when second consumer tries to connect
+Failover: run multiple consumers, see both are able to connect, only one is active, turn off first and second becomes active
+Shared: use Sleep to demonstrate a slow consumer and limit the size of the consumer queue to just 1 message (1000 is default)
+Key_Shared: will introduce later with partitioned topics and keys
+
+SCHEMA
+Producer/Consumer examples with String schema, JSON and AVRO schema
+Introduce Pulsar Datagen Connector as data source with JSON schema, consume with SNConsumerDatagen
+
+MULTI-TENANCY
+Create non super-admin service account, mytenant and mynamespace, apply tenant admin privileges
+Alternately can add produce and consumer permissions on the tenant/namespace
+Convert SNProducer and SNConsumer to use mytenant/mynamespace
+
+TOPIC PARTITIONING, KEYS, and SUBSCRIPTIONS REVISITED
+Increase number of partitions from 1 to 3
+Introduce key to byte example using case statement
+Exclusive: (in order on a per partition basis)
+Failover: (up to 3 can be active when have 3 partitions, work divided by partition)
+Shared: process as fast as possible, mostly random
+Key-Shared: distributed in order by key, can have more than number of partitions
