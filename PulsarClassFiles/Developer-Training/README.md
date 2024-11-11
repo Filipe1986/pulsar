@@ -26,8 +26,8 @@ graph LR;
 
     Approved --> |Exclusive Consumer B| ProductReorder[Product Reorder]
     Declined --> |Exclusive Consumer B| ProductReorder[Product Reorder]
-    MarketingEmailScheduler -->|Exclusive Consumer| ScheduledMarketingEmail((Scheduled Marketing Email))
-    ScheduledMarketingEmail -->|Shared Delayed Consumer| MarketingEmail[Marketing Email]
+    MarketingEmailScheduler --> |Exclusive Consumer| ScheduledMarketingEmail((Scheduled Marketing Email))
+    ScheduledMarketingEmail --> |Shared Delayed Consumer| MarketingEmail[Marketing Email]
 ```
 
 String
