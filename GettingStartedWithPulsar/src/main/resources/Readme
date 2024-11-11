@@ -25,3 +25,5 @@ Exclusive: (in order on a per partition basis)
 Failover: (up to 3 can be active when have 3 partitions, work divided by partition)
 Shared: process as fast as possible, mostly random
 Key-Shared: distributed in order by key, can have more than number of partitions
+
+
