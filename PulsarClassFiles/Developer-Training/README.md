@@ -2,7 +2,7 @@
 
 Struct
 ```mermaid
-graph LR;
+graph TD;
     OrderProducer[Order Producer] -->  BackLogChina((China Topic Backlog))
     OrderProducer[Order Producer] -->  BackLogUS((US Topic Backlog))
 
@@ -23,6 +23,7 @@ graph LR;
 
     Approved --> |Exclusive Consumer A| EmailConfirmation[Email Confirmation]
     Approved --> |Exclusive Consumer C| MarketingEmailScheduler[Marketing Email Scheduler ]
+    Approved --> |Exclusive Consumer D| DailyTotal[Daily Total]
 
     Approved --> |Exclusive Consumer B| ProductReorder[Product Reorder]
     Declined --> |Exclusive Consumer B| ProductReorder[Product Reorder]

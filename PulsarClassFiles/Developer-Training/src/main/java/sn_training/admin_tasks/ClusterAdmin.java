@@ -2,15 +2,12 @@ package sn_training.admin_tasks;
 
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
-import org.apache.pulsar.client.admin.Topics;
 import org.apache.pulsar.client.api.Authentication;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2;
 import org.apache.pulsar.common.policies.data.PublishRate;
 import org.apache.pulsar.common.schema.SchemaInfo;
-import sn_training.Config;
 
-import javax.validation.groups.ConvertGroup;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -63,34 +60,21 @@ public class ClusterAdmin {
         PulsarAdmin pulsarAdmin = createAdmin();
 
         String topic = StructTopics.ORDER_BACKLOG_CHINA;
+        topic = "persistent://public/default/tennis.dummy.producer";
 
-        listTopic(pulsarAdmin);
-        listSchema(pulsarAdmin, topic);
+        //listTopic(pulsarAdmin);
+        //listSchema(pulsarAdmin, topic);
         //deleteSchema(isDeleteSchema, pulsarAdmin, topic);
 
 
         //deleteTopic(pulsarAdmin, topic);
         //deletePartitionTopic(pulsarAdmin, topic);
 
-        //example of creating partitioned topic
-        /*
-        int partitions = 3;
-        try{
-            pulsarAdmin.topics().createPartitionedTopic(topic, partitions);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
 
-        //example of increasing number of partitions
-        /*
-        int partitions = 2;
-        try{
-            pulsarAdmin.topics().updatePartitionedTopic(topic, partitions);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
+        //createPartitionedTopic(pulsarAdmin, topic);
+
+        increasePartitions(pulsarAdmin, topic);
+
 
         //topics
         //get list of topics and print using forEach loop
@@ -266,6 +250,24 @@ public class ClusterAdmin {
 
         pulsarAdmin.close();
         System.out.println("Exiting");
+    }
+
+    private static void increasePartitions(PulsarAdmin pulsarAdmin, String topic) {
+        int partitions = 3;
+        try{
+            pulsarAdmin.topics().updatePartitionedTopic(topic, partitions);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createPartitionedTopic(PulsarAdmin pulsarAdmin, String topic) {
+        int partitions = 3;
+        try{
+            pulsarAdmin.topics().createPartitionedTopic(topic, partitions);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void removeRateLimitation(PulsarAdmin pulsarAdmin) {

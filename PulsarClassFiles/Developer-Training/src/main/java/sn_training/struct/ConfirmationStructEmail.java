@@ -9,11 +9,8 @@ import sn_training.util.ShutdownHook;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static sn_training.Config.Topics;
-
 /**
  * mvn compile exec:java@confirmationEmail
- * 
  * Implementing our first async consumer
  *
  **/
@@ -23,15 +20,12 @@ public class ConfirmationStructEmail extends AsyncRunner {
     final String consumerTopicName = Config.StructTopics.ORDER_APPROVED;
     final String subscriptionName = "confirmation_email";
 
-    /**
-     * The work loop will receive and process a message one at a time.
-     *
-     */
+
     @Override
     protected CompletableFuture<?> workLoop() {
         return consumer.thenCompose((consumer)-> handleMessage(consumer.receiveAsync())
                 .thenCompose(consumer::acknowledgeAsync));
-    };
+    }
 
 
     CompletableFuture<Message<Order>> handleMessage(CompletableFuture<Message<Order>> message) {

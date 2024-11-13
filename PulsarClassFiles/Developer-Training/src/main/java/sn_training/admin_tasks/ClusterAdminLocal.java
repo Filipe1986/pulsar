@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static sn_training.Config.TENANT;
 import static sn_training.ConfigLocal.*;
 
 /**
@@ -31,7 +30,7 @@ public class ClusterAdminLocal {
         PulsarAdmin pulsarAdmin = null;
         try {
             pulsarAdmin = PulsarAdmin.builder()
-                    .authentication(getAuth())
+                    //.authentication(getAuth())
                     .serviceHttpUrl(PULSAR_ADMIN_URL)
                     //.tlsTrustCertsFilePath(tlsTrustCertsFilePath)
                     .allowTlsInsecureConnection(false)
@@ -68,8 +67,8 @@ public class ClusterAdminLocal {
         String topic = Config.StructTopics.ORDER_BACKLOG_CHINA;
 
 
-        createTenant(pulsarAdmin, TENANT);
-        createNameSpace(pulsarAdmin, NAME_SPACE);
+        //createTenant(pulsarAdmin, TENANT);
+        //createNameSpace(pulsarAdmin, NAME_SPACE);
         //listTopic(pulsarAdmin);
         //listSchema(pulsarAdmin, topic);
         //deleteSchema(isDeleteSchema, pulsarAdmin, topic);
@@ -79,24 +78,14 @@ public class ClusterAdminLocal {
         //deletePartitionTopic(pulsarAdmin, topic);
 
         //example of creating partitioned topic
-        /*
-        int partitions = 3;
-        try{
-            pulsarAdmin.topics().createPartitionedTopic(topic, partitions);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
+
+        createPartitionedTopic(pulsarAdmin);
+
 
         //example of increasing number of partitions
-        /*
-        int partitions = 2;
-        try{
-            pulsarAdmin.topics().updatePartitionedTopic(topic, partitions);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
+
+        //increasePartitions(pulsarAdmin, topic);
+
 
         //topics
         //get list of topics and print using forEach loop
@@ -272,6 +261,31 @@ public class ClusterAdminLocal {
 
         pulsarAdmin.close();
         System.out.println("Exiting");
+    }
+
+    private static void createPartitionedTopic(PulsarAdmin pulsarAdmin) {
+        String topic;
+        int partitions = 3;
+        topic = "persistent://public/default/tennis.gamestate";
+        try{
+
+            pulsarAdmin.topics().delete(topic);
+
+            System.out.println("Creating partitioned topic");
+            pulsarAdmin.topics().createPartitionedTopic(topic, partitions);
+            System.out.println("Partitioned topic created");
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void increasePartitions(PulsarAdmin pulsarAdmin, String topic) {
+        int partitions = 3;
+        try{
+            pulsarAdmin.topics().updatePartitionedTopic(topic, partitions);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void createTenant(PulsarAdmin pulsarAdmin, String tenantName) {
