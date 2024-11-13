@@ -76,7 +76,7 @@ public class DailyTotal extends AsyncRunner {
                 .subscribeAsync();
 
         consumer.thenCompose(consumer -> {
-            // set the consumer to start to read from a time in the past
+            // seekAsync() to move the cursor back in time each time the consumer is started
             return consumer.seekAsync(timeToReset);
         });
         return consumer.thenAccept(this::registerResource);
