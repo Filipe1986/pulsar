@@ -66,6 +66,7 @@ public class DailyTotal extends AsyncRunner {
         setLoopTime(0);
 
         totalCache = new HashMap<>();
+        Long timeToReset = Instant.now().truncatedTo(ChronoUnit.MINUTES).minus(2, ChronoUnit.MINUTES).toEpochMilli() ;
 
         consumer = client.newConsumer(Schema.JSON(Order.class))
                 .topic(consumerTopicName)
@@ -74,6 +75,10 @@ public class DailyTotal extends AsyncRunner {
                 .subscriptionInitialPosition(SubscriptionInitialPosition.Latest)
                 .subscribeAsync();
 
+        consumer.thenCompose(consumer -> {
+            // set the consumer to start to read from a time in the past
+            return consumer.seekAsync(timeToReset);
+        });
         return consumer.thenAccept(this::registerResource);
 
     }
