@@ -29,8 +29,9 @@ public class InventoryCheckerSharedStructChina extends AsyncRunner {
 
     CompletableFuture<Message<Order>> handleMessage(CompletableFuture<Message<Order>> message) {
         return message.thenApplyAsync((msg) -> {
-            System.out.println("Handling message:  " + msg.getValue().getUniqueOrderNumber());
+            System.out.println("Handling message:  " + msg.getValue().getUniqueOrderNumber() + " for partition " + msg.getTopicName());
 
+            System.out.println("msg" + msg.getValue());
             String topic = null;
 
 
@@ -44,7 +45,7 @@ public class InventoryCheckerSharedStructChina extends AsyncRunner {
             sleep(5000);
 
             CompletableFuture<MessageId> myFuture = producerFactory.getProducer(topic).thenCompose((producer)
-                    -> producer.newMessage().value(msg.getValue()).sendAsync());
+                    -> producer.newMessage().key(msg.getValue().getCountry()).value(msg.getValue()).sendAsync());
 
             try {
                 myFuture.get();

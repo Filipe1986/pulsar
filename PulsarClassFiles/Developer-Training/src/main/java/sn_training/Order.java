@@ -10,7 +10,7 @@ public class Order {
     private Integer quantity;
     private Instant orderTime;
     private String email;
-    //private Integer orderTotal;
+    private Integer orderTotal;
 
     Order() {
         this.orderTime = Instant.now();
@@ -26,7 +26,6 @@ public class Order {
 
     public void setUniqueCustomerIdentifier(String UCI) {
         this.uniqueCustomerIdentifier = UCI;
-        return;
     }
 
     public String getUniqueOrderNumber() {
@@ -35,7 +34,6 @@ public class Order {
 
     public void setUniqueOrderNumber(String UON) {
         this.uniqueOrderNumber = UON;
-        return;
     }
 
     public String getItem() {
@@ -44,7 +42,6 @@ public class Order {
 
     public void setItem(String it) {
         this.item = it;
-        return;
     }
 
     public Integer getQuantity() {
@@ -53,7 +50,6 @@ public class Order {
 
     public void setQuantity(Integer quant) {
         this.quantity = quant;
-        return;
     }
 
     public String getCountry() {
@@ -62,7 +58,6 @@ public class Order {
 
     public void setCountry(String country) {
         this.country = country;
-        return;
     }
 
     public String getEmail() {
@@ -71,19 +66,17 @@ public class Order {
 
     public void setEmail(String em) {
         this.email = em;
-        return;
     }
 
-    /*
+
     public Integer getOrderTotal() {
         return orderTotal;
     }
 
     public void setOrderTotal(Integer total) {
         this.orderTotal = total;
-        return;
     }
-    */
+
 
     @Override
     public String toString() {

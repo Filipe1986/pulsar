@@ -5,12 +5,15 @@ import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.api.Authentication;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.impl.auth.oauth2.AuthenticationFactoryOAuth2;
-import org.apache.pulsar.common.policies.data.PublishRate;
+import org.apache.pulsar.common.policies.data.*;
+import org.apache.pulsar.common.policies.data.impl.BacklogQuotaImpl;
 import org.apache.pulsar.common.schema.SchemaInfo;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static sn_training.Config.*;
 
@@ -59,21 +62,7 @@ public class ClusterAdmin {
 
         PulsarAdmin pulsarAdmin = createAdmin();
 
-        String topic = StructTopics.ORDER_BACKLOG_CHINA;
-        topic = "persistent://public/default/tennis.dummy.producer";
-
-        //listTopic(pulsarAdmin);
-        //listSchema(pulsarAdmin, topic);
-        //deleteSchema(isDeleteSchema, pulsarAdmin, topic);
-
-
-        //deleteTopic(pulsarAdmin, topic);
-        //deletePartitionTopic(pulsarAdmin, topic);
-
-
-        //createPartitionedTopic(pulsarAdmin, topic);
-
-        increasePartitions(pulsarAdmin, topic);
+        String topic = StructTopics.ORDER_DECLINED;
 
 
         //topics
@@ -88,32 +77,7 @@ public class ClusterAdmin {
         }
         */
 
-        //get more information on one particular partition
-        //use to see message rate in and messasge rate out for order_approved partition-0, 1 and 2
-        /*
-        String topicPartition = "persistent://student30/developer/order_approved-partition-0";
-        TopicStats stats = null;
-        try{
-            stats = pulsarAdmin.topics().getStats(topicPartition);
-            System.out.println("Stats: " + stats);
-            //System.out.println("Messages in: " + stats.getMsgRateIn() + " messages out: " + stats.getMsgRateOut());
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
 
-        //get list of subscriptions and their stats, this is a partitioned topic
-        /*
-        //String topicPartition = "persistent://student30/developer/order_approved-partition-0";
-        String topicPartition = "persistent://student30/developer/orderBackLogUS";
-        TopicStats stats = null;
-        try {
-            stats = pulsarAdmin.topics().getStats(topicPartition);
-            stats.getSubscriptions().forEach((a,b) -> System.out.println(a + " " + b));
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
 
         //remove subscription
         /*
@@ -125,96 +89,13 @@ public class ClusterAdmin {
             e.printStackTrace();
         }
         */
-
-        //get backlog quotas before and after making backlog quota
-        /*
-        try {
-            Map<BacklogQuota.BacklogQuotaType,BacklogQuota> quotas = pulsarAdmin.namespaces().getBacklogQuotaMap(namespace);
-            quotas.forEach((a,b) -> System.out.println(a + " " + b));  
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
-
-
-        //create backlog quota
-        /*
-        BacklogQuota myBacklog = null;
-        Long limitSize = 100L; //is this number of messages
-            //1. orders are stuck in a subscription to orderBackLogChina before we switched to Order Schema
-            //2. if redelivery service is not turned on, orders are stuck in subscriptions to order_approved and order_declined
-            //3. there could be other places
-            //this is a good opportunity to go back and look at active subscriptions on various topics and their stats
-            //also deleting unused subscriptions, both of these commands are above
-        int limitTime = 300; //300s
-        BacklogQuota.RetentionPolicy policy = BacklogQuota.RetentionPolicy.producer_request_hold;
-        try {
-            myBacklog = new BacklogQuotaImpl(limitSize,limitTime,policy); //not sure why Impl is needed here
-            pulsarAdmin.namespaces().setBacklogQuota(namespace, myBacklog);
-
-            //pulsarAdmin.namespaces().setBacklogQuota(namespace, new BacklogQuota(limit, limitTime, policy));
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
-
-
-        //remove backlog quota for namespace
-        /*
-        try {
-            pulsarAdmin.namespaces().removeBacklogQuota(namespace);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
-
-        //get retention policy before and after creating the retention policy
-        /*
-        try {
-            System.out.println(pulsarAdmin.namespaces().getRetention(namespace));
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
-
-        //create and set retention policy
-        /*
-        int retentionTime = 10; // 10 minutes
-        int retentionSize = 500; // 500 megabytes
-        RetentionPolicies policies = new RetentionPolicies(retentionTime, retentionSize);
-        try {
-            pulsarAdmin.namespaces().setRetention(namespace, policies);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
-
-        //delete retention policy
-        /*
-        try {
-            pulsarAdmin.namespaces().removeRetention(namespace);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
+        
 
         //check user account settings at namespace level
-        /*
-        try {
-            System.out.println(pulsarAdmin.namespaces().getPermissions(namespace));
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
 
-        //get tenant permissions
-        /*
-        try {
-            System.out.println(pulsarAdmin.tenants().getTenantInfo("student30"));
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
+        checkUserSettings(pulsarAdmin, NAME_SPACE);
+
+
 
         //get list of clusters and their brokers
 
@@ -224,7 +105,7 @@ public class ClusterAdmin {
          */
 
 
-        
+
         /* get list of brokers for each partition
         try {
             //get list of partitions returned but brokers are all returning null
@@ -252,6 +133,126 @@ public class ClusterAdmin {
         System.out.println("Exiting");
     }
 
+    private static void checkUserSettings(PulsarAdmin pulsarAdmin, String namespace) {
+        try {
+            Map<String, Set<AuthAction>> permissions = pulsarAdmin.namespaces().getPermissions(namespace);
+            System.out.println("Permissions: " + permissions);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void getTenant(PulsarAdmin pulsarAdmin, String tenant) {
+
+        try {
+            TenantInfo tenantInfo = pulsarAdmin.tenants().getTenantInfo(tenant);
+            System.out.println(tenantInfo);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void deleteRetention(PulsarAdmin pulsarAdmin, String namespace) {
+        try {
+            pulsarAdmin.namespaces().removeRetention(namespace);
+            System.out.println("Retention policy removed for namespace " + namespace);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void setRetention(PulsarAdmin pulsarAdmin, String namespace) {
+        int retentionTime = 10; // 10 minutes
+        int retentionSize = 500; // 500 megabytes
+        RetentionPolicies policies = new RetentionPolicies(retentionTime, retentionSize);
+        System.out.println("Setting retention policy for namespace " + namespace);
+        try {
+            pulsarAdmin.namespaces().setRetention(namespace, policies);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void getRetention(PulsarAdmin pulsarAdmin, String namespace) {
+        try {
+            RetentionPolicies retention = pulsarAdmin.namespaces().getRetention(namespace);
+            if(retention == null) {
+                System.out.println("No retention policy set for namespace " + namespace);
+            } else {
+                System.out.println("Retention policy for namespace " + namespace + " is " + retention);
+            }
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void removeBacklogQuota(PulsarAdmin pulsarAdmin) {
+        try {
+            pulsarAdmin.namespaces().removeBacklogQuota(NAME_SPACE);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createBacklogQuota(PulsarAdmin pulsarAdmin) {
+
+        Long limitSize = 100L; //is this number of messages
+        //1. orders are stuck in a subscription to orderBackLogChina before we switched to Order Schema
+        //2. if redelivery service is not turned on, orders are stuck in subscriptions to order_approved and order_declined
+        //3. there could be other places
+        //this is a good opportunity to go back and look at active subscriptions on various topics and their stats
+        //also deleting unused subscriptions, both of these commands are above
+        int limitTime = 300; //300s
+        BacklogQuota.RetentionPolicy policy = BacklogQuota.RetentionPolicy.producer_request_hold;
+        BacklogQuota myBacklog = new BacklogQuotaImpl(limitSize,limitTime,policy);
+        try {
+            myBacklog = new BacklogQuotaImpl(limitSize,limitTime,policy); //not sure why Impl is needed here
+            pulsarAdmin.namespaces().setBacklogQuota(NAME_SPACE, myBacklog);
+            System.out.println("Backlog quota set for namespace " + NAME_SPACE);
+
+            //pulsarAdmin.namespaces().setBacklogQuota(namespace, new BacklogQuota(limit, limitTime, policy));
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void getBacklogQuotas(PulsarAdmin pulsarAdmin, String namespace) {
+        try {
+
+            Map<BacklogQuota.BacklogQuotaType,BacklogQuota> quotas = pulsarAdmin.namespaces().getBacklogQuotaMap(namespace);
+
+            quotas.forEach((a,b) -> System.out.println(a + " " + b));
+            if (quotas.isEmpty()) System.out.println("No quotas found for namespace " + namespace);
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void listSubscriptionsStats(PulsarAdmin pulsarAdmin, String topicPartition) {
+
+        if(!topicPartition.contains("partition")){
+            topicPartition += "-partition-0";
+        }
+        TopicStats stats = null;
+        try {
+            stats = pulsarAdmin.topics().getStats(topicPartition);
+            stats.getSubscriptions().forEach((a,b) -> System.out.println(a + " " + b));
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void getMessageRateInOut(PulsarAdmin pulsarAdmin, String topicPartition) {
+        TopicStats stats = null;
+        try{
+            stats = pulsarAdmin.topics().getStats(topicPartition);
+            System.out.println("Stats: " + stats);
+            //System.out.println("Messages in: " + stats.getMsgRateIn() + " messages out: " + stats.getMsgRateOut());
+        } catch (PulsarAdminException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static void increasePartitions(PulsarAdmin pulsarAdmin, String topic) {
         int partitions = 3;
         try{
@@ -261,10 +262,12 @@ public class ClusterAdmin {
         }
     }
 
-    private static void createPartitionedTopic(PulsarAdmin pulsarAdmin, String topic) {
-        int partitions = 3;
+    private static void createPartitionedTopic(PulsarAdmin pulsarAdmin, String topic, int partitions) {
+
         try{
+            System.out.println("Creating partitioned topic");
             pulsarAdmin.topics().createPartitionedTopic(topic, partitions);
+            System.out.println("Partitioned topic created");
         } catch (PulsarAdminException e) {
             e.printStackTrace();
         }

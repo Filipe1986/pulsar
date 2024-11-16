@@ -41,15 +41,18 @@ public class MessageGenerator {
         myOrder.setUniqueCustomerIdentifier(counter + "UCI");
         myOrder.setUniqueOrderNumber(counter + "UON");
         myOrder.setQuantity(rand.nextInt(10));
+        System.out.println("Quantity: " + myOrder.getQuantity());
+        myOrder.setOrderTotal(myOrder.getQuantity() * 10);
+        System.out.println("order Total: " + myOrder.getOrderTotal());
         
-        if (counter%2 == 0) { 
-            myOrder.setCountry("China");
-        } else {
-            myOrder.setCountry("US");
-        };
-        
+//        if (counter%2 == 0) {
+//            myOrder.setCountry("China");
+//        } else {
+//            myOrder.setCountry("US");
+//        };
+//
         //use with key-based exercise to add more countries
-        /*
+
         switch(counter % 10) {
             case 0:
                 myOrder.setCountry("China");
@@ -82,7 +85,7 @@ public class MessageGenerator {
                 myOrder.setCountry("South Korea");
                 break;
         }
-        */
+
         return myOrder;
     }
 }

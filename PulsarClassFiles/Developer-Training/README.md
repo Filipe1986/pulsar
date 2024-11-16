@@ -29,6 +29,9 @@ graph TD;
     Declined --> |Exclusive Consumer B| ProductReorder[Product Reorder]
     MarketingEmailScheduler --> |Exclusive Consumer| ScheduledMarketingEmail((Scheduled Marketing Email))
     ScheduledMarketingEmail --> |Shared Delayed Consumer| MarketingEmail[Marketing Email]
+    DailyTotal --> MyTableView((My Table View))
+    MyTableView -->  TableReader[Table Reader]
+
 ```
 
 String

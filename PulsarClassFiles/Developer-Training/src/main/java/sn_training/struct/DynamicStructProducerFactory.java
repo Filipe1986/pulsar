@@ -1,9 +1,6 @@
 package sn_training.struct;
 
-import org.apache.pulsar.client.api.Producer;
-import org.apache.pulsar.client.api.PulsarClient;
-import org.apache.pulsar.client.api.PulsarClientException;
-import org.apache.pulsar.client.api.Schema;
+import org.apache.pulsar.client.api.*;
 import sn_training.Order;
 
 import java.io.Closeable;
@@ -27,7 +24,10 @@ public class DynamicStructProducerFactory implements Closeable {
     public CompletableFuture<Producer<Order>> getProducer(String topicName) {
         return producerCache.computeIfAbsent(topicName, (tn) -> {
             System.out.println("Creating new producer with topic " + tn);
-            return client.newProducer(Schema.JSON(Order.class)).topic(tn).createAsync();
+            return client.newProducer(Schema.JSON(Order.class))
+                    .batcherBuilder(BatcherBuilder.KEY_BASED)
+                    .topic(tn)
+                    .createAsync();
         });
     }
 

@@ -56,7 +56,7 @@ public class InventoryCheckerStructChina extends AsyncRunner {
             }
 
             CompletableFuture<MessageId> myFuture = producerFactory.getProducer(topic).thenCompose((producer)
-                    -> producer.newMessage().value(msg.getValue()).sendAsync());
+                    -> producer.newMessage().key(msg.getValue().getCountry()).value(msg.getValue()).sendAsync());
 
             try {
                 myFuture.get(); //blocking until sendAsync completes

@@ -50,7 +50,7 @@ public class InventoryCheckerStructChinaNACK extends AsyncRunner {
                 //sleep(5000);
 
                 CompletableFuture<MessageId> myFuture = producerFactory.getProducer(topic).thenCompose((producer)
-                        -> producer.newMessage().value(msg.getValue()).sendAsync());
+                        -> producer.newMessage().key(msg.getValue().getCountry()).value(msg.getValue()).sendAsync());
 
                 myFuture.get();
 

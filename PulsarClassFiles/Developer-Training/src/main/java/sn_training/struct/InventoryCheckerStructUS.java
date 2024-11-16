@@ -36,7 +36,7 @@ public class InventoryCheckerStructUS extends AsyncRunner {
 
     CompletableFuture<Message<Order>> handleMessage(CompletableFuture<Message<Order>> message) {
         return message.thenApplyAsync((msg) -> { //do something with message once it's obtained by consumer, then pass back to let consumer acknowledge it once we've confirmed we're done
-            System.out.println("Handling message:  " + msg.getValue());
+            System.out.println("Handling message:  " + msg.getValue() + " for partition " + msg.getTopicName());
 
             String topic = null;
             if(msg.getValue().getQuantity() > 7) {
@@ -47,7 +47,7 @@ public class InventoryCheckerStructUS extends AsyncRunner {
 
             //get producer from DynamicProducerFactory and then send message
             CompletableFuture<MessageId> myFuture = producerFactory.getProducer(topic).thenCompose((producer) -> {
-                return producer.newMessage().value(msg.getValue()).sendAsync();
+                return producer.newMessage().key(msg.getValue().getCountry()).value(msg.getValue()).sendAsync();
             });
 
             try {
@@ -58,7 +58,7 @@ public class InventoryCheckerStructUS extends AsyncRunner {
 
             System.out.println("Published and will acknowledge message " + msg.getValue() + " to topic " + topic);
 
-            return msg; //return original message to allow consumer to acknowledge using acknowledgeAsync
+            return msg;
         });
     }
 

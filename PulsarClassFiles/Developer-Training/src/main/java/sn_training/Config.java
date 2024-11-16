@@ -21,6 +21,8 @@ public class Config {
         public static final String ORDER_DECLINED = "/order_declined";
         public static final String ORDER_APPROVED = "/order_approved";
         public static final String SCHEDULED_MARKETING_EMAIL = "/scheduledMarketingEmail";
+        public static final String MY_TABLE_VIEW = "/my_table_view";
+
     }
 
     public static class Topics {
@@ -32,12 +34,14 @@ public class Config {
 
     public static class StructTopics {
 
+
         private static final String STRUCT_SUFFIX = "_struct";
         public static final String ORDER_BACKLOG_CHINA = TOPIC_PREFIX + Suffix.ORDER_BACKLOG_CHINA + STRUCT_SUFFIX;
         public static final String ORDER_BACKLOG_US = TOPIC_PREFIX + Suffix.ORDER_BACKLOG_US + STRUCT_SUFFIX;
         public static final String ORDER_APPROVED = TOPIC_PREFIX + Suffix.ORDER_APPROVED + STRUCT_SUFFIX;
         public static final String ORDER_DECLINED = TOPIC_PREFIX + Suffix.ORDER_DECLINED + STRUCT_SUFFIX;
         public static final String SCHEDULED_MARKETING_EMAIL = TOPIC_PREFIX + Suffix.SCHEDULED_MARKETING_EMAIL + STRUCT_SUFFIX;
+        public static final String MY_TABLE_VIEW = TOPIC_PREFIX + Suffix.MY_TABLE_VIEW + STRUCT_SUFFIX;
     }
 
     public static class StructDLQTopics {

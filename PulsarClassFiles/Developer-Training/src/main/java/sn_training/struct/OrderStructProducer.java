@@ -73,6 +73,7 @@ public class OrderStructProducer extends AsyncRunner {
         // Create our producer, register the shutdown hook, and then run
         OrderStructProducer orderProducer = new OrderStructProducer();
         ShutdownHook.registerForShutdownHook(orderProducer);
+
         //executing run will execute setup, followed by the doWork loop which calls the workLoop repeatedly
         //since the workLoop never finished, get will never complete and program will not exit
         orderProducer.run().get();
