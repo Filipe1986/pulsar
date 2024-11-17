@@ -52,338 +52,320 @@ public class ClusterAdmin {
         }
     }
 
-    /**
-     * mvn compile exec:java@cluster_admin
-     * <p>
-     * uncomment admin code you would like to execute
-     **/
     public static void main(String[] args) {
-        boolean isDeleteSchema = isDeleteSchema();
 
         PulsarAdmin pulsarAdmin = createAdmin();
 
-        String topic = StructTopics.ORDER_DECLINED;
-
-
-        //topics
-        //get list of topics and print using forEach loop
-        /*
-        try{
-            List<String> result = pulsarAdmin.topics().getList(namespace);
-            result.forEach(string -> System.out.println(string));
-
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();;
-        }
-        */
-
-
-
-        //remove subscription
-        /*
-        String topicGetSubscriptions = "persistent://student01/developer/orderBackLogUS";
-        String subscriptionName = "inventory_checker";
-        try {
-            pulsarAdmin.topics().deleteSubscription(topicGetSubscriptions,subscriptionName);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
-        
-
-        //check user account settings at namespace level
-
-        checkUserSettings(pulsarAdmin, NAME_SPACE);
-
-
-
-        //get list of clusters and their brokers
-
-        /*
-        Just with super user permissions, you can get list of clusters and their brokers
-        ListClusterAndBrokers(pulsarAdmin);
-         */
-
-
-
-        /* get list of brokers for each partition
-        try {
-            //get list of partitions returned but brokers are all returning null
-            Map<String,String> myMap = pulsarAdmin.lookups().lookupPartitionedTopic("persistent://student01/developer/order_approved");
-            myMap.forEach((a,b) -> {
-                System.out.println(a + " " + b);
-            });
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-        */
-
-        //unload topic, watch OrderProducer or InventoryCheckerChina/InventoryCheckerUS when this happens, won't even notice
-        //unloadTopic(pulsarAdmin);
-
-
-        //decrease max publish rate on broker to test producer queue settings
-        //limitMaxPublishRateTo1(pulsarAdmin);
-
-        //remove namespace publish rate limitation, used for testing back pressure on producer
-        //removeRateLimitation(pulsarAdmin);
 
 
         pulsarAdmin.close();
         System.out.println("Exiting");
     }
 
-    private static void checkUserSettings(PulsarAdmin pulsarAdmin, String namespace) {
-        try {
-            Map<String, Set<AuthAction>> permissions = pulsarAdmin.namespaces().getPermissions(namespace);
-            System.out.println("Permissions: " + permissions);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
+    private static class Topics {
 
-    private static void getTenant(PulsarAdmin pulsarAdmin, String tenant) {
+        private static void listSubscriptionsStats(PulsarAdmin pulsarAdmin, String topic) {
 
-        try {
-            TenantInfo tenantInfo = pulsarAdmin.tenants().getTenantInfo(tenant);
-            System.out.println(tenantInfo);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void deleteRetention(PulsarAdmin pulsarAdmin, String namespace) {
-        try {
-            pulsarAdmin.namespaces().removeRetention(namespace);
-            System.out.println("Retention policy removed for namespace " + namespace);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void setRetention(PulsarAdmin pulsarAdmin, String namespace) {
-        int retentionTime = 10; // 10 minutes
-        int retentionSize = 500; // 500 megabytes
-        RetentionPolicies policies = new RetentionPolicies(retentionTime, retentionSize);
-        System.out.println("Setting retention policy for namespace " + namespace);
-        try {
-            pulsarAdmin.namespaces().setRetention(namespace, policies);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void getRetention(PulsarAdmin pulsarAdmin, String namespace) {
-        try {
-            RetentionPolicies retention = pulsarAdmin.namespaces().getRetention(namespace);
-            if(retention == null) {
-                System.out.println("No retention policy set for namespace " + namespace);
-            } else {
-                System.out.println("Retention policy for namespace " + namespace + " is " + retention);
+            if(!topic.contains("partition")){
+                topic += "-partition-0";
             }
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void removeBacklogQuota(PulsarAdmin pulsarAdmin) {
-        try {
-            pulsarAdmin.namespaces().removeBacklogQuota(NAME_SPACE);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void createBacklogQuota(PulsarAdmin pulsarAdmin) {
-
-        Long limitSize = 100L; //is this number of messages
-        //1. orders are stuck in a subscription to orderBackLogChina before we switched to Order Schema
-        //2. if redelivery service is not turned on, orders are stuck in subscriptions to order_approved and order_declined
-        //3. there could be other places
-        //this is a good opportunity to go back and look at active subscriptions on various topics and their stats
-        //also deleting unused subscriptions, both of these commands are above
-        int limitTime = 300; //300s
-        BacklogQuota.RetentionPolicy policy = BacklogQuota.RetentionPolicy.producer_request_hold;
-        BacklogQuota myBacklog = new BacklogQuotaImpl(limitSize,limitTime,policy);
-        try {
-            myBacklog = new BacklogQuotaImpl(limitSize,limitTime,policy); //not sure why Impl is needed here
-            pulsarAdmin.namespaces().setBacklogQuota(NAME_SPACE, myBacklog);
-            System.out.println("Backlog quota set for namespace " + NAME_SPACE);
-
-            //pulsarAdmin.namespaces().setBacklogQuota(namespace, new BacklogQuota(limit, limitTime, policy));
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void getBacklogQuotas(PulsarAdmin pulsarAdmin, String namespace) {
-        try {
-
-            Map<BacklogQuota.BacklogQuotaType,BacklogQuota> quotas = pulsarAdmin.namespaces().getBacklogQuotaMap(namespace);
-
-            quotas.forEach((a,b) -> System.out.println(a + " " + b));
-            if (quotas.isEmpty()) System.out.println("No quotas found for namespace " + namespace);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void listSubscriptionsStats(PulsarAdmin pulsarAdmin, String topicPartition) {
-
-        if(!topicPartition.contains("partition")){
-            topicPartition += "-partition-0";
-        }
-        TopicStats stats = null;
-        try {
-            stats = pulsarAdmin.topics().getStats(topicPartition);
-            stats.getSubscriptions().forEach((a,b) -> System.out.println(a + " " + b));
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void getMessageRateInOut(PulsarAdmin pulsarAdmin, String topicPartition) {
-        TopicStats stats = null;
-        try{
-            stats = pulsarAdmin.topics().getStats(topicPartition);
-            System.out.println("Stats: " + stats);
-            //System.out.println("Messages in: " + stats.getMsgRateIn() + " messages out: " + stats.getMsgRateOut());
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void increasePartitions(PulsarAdmin pulsarAdmin, String topic) {
-        int partitions = 3;
-        try{
-            pulsarAdmin.topics().updatePartitionedTopic(topic, partitions);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void createPartitionedTopic(PulsarAdmin pulsarAdmin, String topic, int partitions) {
-
-        try{
-            System.out.println("Creating partitioned topic");
-            pulsarAdmin.topics().createPartitionedTopic(topic, partitions);
-            System.out.println("Partitioned topic created");
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void removeRateLimitation(PulsarAdmin pulsarAdmin) {
-        try {
-            System.out.println("Removing rate limitation");
-            pulsarAdmin.namespaces().removePublishRate(NAME_SPACE);
-            System.out.println("Rate limitation removed");
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void deleteTopic(PulsarAdmin pulsarAdmin, String topic) {
-        try{
-            pulsarAdmin.topics().delete(topic);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void deletePartitionTopic(PulsarAdmin pulsarAdmin, String topic) {
-        try{
-            System.out.println("Deleting partitioned topic");
-            pulsarAdmin.topics().deletePartitionedTopic(topic);
-            System.out.println("Deleted");
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void unloadTopic(PulsarAdmin pulsarAdmin) {
-        try {
-            String topicToUnload = "persistent://student30/developer/orderBackLogChina";
-            System.out.println("Unloading topic");
-            pulsarAdmin.topics().unload(topicToUnload);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void limitMaxPublishRateTo1(PulsarAdmin pulsarAdmin) {
-        try {
-            System.out.println("Limiting max publish rate to 1 message per second");
-            //1 message per second
-            PublishRate msgPubRate = new PublishRate(1,10000);
-
-            pulsarAdmin.namespaces().setPublishRate(NAME_SPACE, msgPubRate);
-            System.out.println("Limiting Done");
-
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void ListClusterAndBrokers(PulsarAdmin pulsarAdmin) {
-        try {
-            List<String> clusters = pulsarAdmin.clusters().getClusters();
-            clusters.forEach(cluster -> {
-                try {
-                    System.out.println(clusters);
-                    List<String> brokers = pulsarAdmin.brokers().getActiveBrokers(cluster);
-                    brokers.forEach(broker -> {
-                        System.out.println(" " + broker);
-                    });
-                } catch (PulsarAdminException e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void deleteSchema(boolean isDeleteSchema, PulsarAdmin pulsarAdmin, String topic) {
-        if (isDeleteSchema) {
+            TopicStats stats = null;
             try {
+                stats = pulsarAdmin.topics().getStats(topic);
+                stats.getSubscriptions().forEach((a,b) -> System.out.println(a + " " + b));
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void getMessageRateInOut(PulsarAdmin pulsarAdmin, String topic) {
+            TopicStats stats = null;
+            try{
+                stats = pulsarAdmin.topics().getStats(topic);
+                System.out.println("Stats: " + stats);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void listTopic( PulsarAdmin pulsarAdmin, String namespace) {
+            List<String> myTopics = null;
+            try {
+                myTopics = pulsarAdmin.topics().getList(namespace);
+                System.out.printf("Topics in namespace %s:\n", namespace);
+                myTopics.forEach(System.out::println);
+
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        private static void createPartitionedTopic(PulsarAdmin pulsarAdmin, String topic, int partitions) {
+
+            try{
+                System.out.println("Creating partitioned topic with " + partitions + " partitions");
+                pulsarAdmin.topics().createPartitionedTopic(topic, partitions);
+                System.out.println("Partitioned topic created" + topic + " with " + partitions + " partitions");
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void unloadTopic(PulsarAdmin pulsarAdmin, String topic) {
+            try {
+                System.out.println("Unloading topic: " + topic);
+                pulsarAdmin.topics().unload(topic);
+                System.out.println("Topic: " + topic + "unloaded");
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void deleteTopic(PulsarAdmin pulsarAdmin, String topic) {
+            try{
+                System.out.println("Deleting topic: " + topic);
+                pulsarAdmin.topics().delete(topic);
+                System.out.println("Topic: " + topic + " deleted");
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void deletePartitionedTopic(PulsarAdmin pulsarAdmin, String topic) {
+            try{
+                System.out.println("Deleting partitioned topic: " + topic);
+                pulsarAdmin.topics().deletePartitionedTopic(topic);
+                System.out.println("Partitioned topic: " + topic + " deleted");
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void increasePartitions(PulsarAdmin pulsarAdmin, String topic) {
+            int partitions = 3;
+            try{
+                System.out.println("Increasing partitions for topic: " + topic);
+                pulsarAdmin.topics().updatePartitionedTopic(topic, partitions);
+                System.out.println("Partitions increased to " + partitions + " for topic " + topic);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void listSchema( PulsarAdmin pulsarAdmin, String topic) {
+
+            try {
+                System.out.println("Getting schema info for topic: " + topic);
+                SchemaInfo schemaInfo = pulsarAdmin.schemas().getSchemaInfo(topic);
+                System.out.printf("Schema info: %s for topic: %s%n", schemaInfo, topic);
+            } catch (PulsarAdminException e) {
+                System.out.println("Schema not found");
+            }
+
+
+        }
+
+        private static void removeSchema(PulsarAdmin pulsarAdmin, String topic) {
+            try {
+                System.out.println("Deleting schema for topic: " + topic);
                 pulsarAdmin.schemas().deleteSchema(topic);
                 System.out.println("Schema deleted");
             } catch (PulsarAdminException e) {
                 e.printStackTrace();
             }
         }
+
     }
 
-    private static boolean isDeleteSchema() {
-        Boolean isDeleteSchema = Boolean.FALSE;
-        if (System.getProperty("deleteSchema") != null) {
-            isDeleteSchema = (Boolean) System.getProperty("deleteSchema").equals("true");
+    private static class Brokers {
+        private static void listBrokerPerPartition(PulsarAdmin pulsarAdmin, String topic) {
+            try {
+
+                Map<String,String> myMap = pulsarAdmin.lookups().lookupPartitionedTopic(topic);
+                myMap.forEach((a,b) -> {
+                    System.out.println(a + " " + b);
+                });
+                if(myMap.isEmpty()){
+                    System.out.println("No partitions found for topic " + topic);
+                }
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
         }
-        System.out.printf("Should deleteSchema: %b%n", isDeleteSchema);
-        return isDeleteSchema;
     }
 
-    private static void listSchema( PulsarAdmin pulsarAdmin, String topic) {
-        SchemaInfo si = null;
-        try {
-            si = pulsarAdmin.schemas().getSchemaInfo(topic);
-        } catch (PulsarAdminException e) {
-            System.out.println("Schema not found");
+
+    private static class Subscription {
+        private static void remove(PulsarAdmin pulsarAdmin, String topic, String subscriptionName) {
+            try {
+                pulsarAdmin.topics().deleteSubscription(topic, subscriptionName);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
         }
-        System.out.printf("Schema info: %s for topic: %s%n", si, topic);
-
     }
 
-    private static void listTopic( PulsarAdmin pulsarAdmin) {
-        List<String> myTopics = null;
-        try {
-            myTopics = pulsarAdmin.topics().getList(NAME_SPACE);
-        } catch (PulsarAdminException e) {
-            e.printStackTrace();
+
+    private static class Namespace {
+
+        private static void listPermissions(PulsarAdmin pulsarAdmin, String namespace) {
+            try {
+                Map<String, Set<AuthAction>> permissions = pulsarAdmin.namespaces().getPermissions(namespace);
+                System.out.println("Permissions: " + permissions);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
         }
-        System.out.printf("Topics in namespace %s:\n", NAME_SPACE);
-        myTopics.forEach(System.out::println);
+
+        private static void listTopics(PulsarAdmin pulsarAdmin, String namespace) {
+            try{
+                List<String> result = pulsarAdmin.topics().getList(namespace);
+                result.forEach(System.out::println);
+                if(result.isEmpty()){
+                    System.out.println("No topics found for namespace " + namespace);
+                }
+
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();;
+            }
+        }
+
+        private static void setRetention(PulsarAdmin pulsarAdmin, String namespace) {
+            int retentionTime = 10; // 10 minutes
+            int retentionSize = 500; // 500 megabytes
+            RetentionPolicies policies = new RetentionPolicies(retentionTime, retentionSize);
+            System.out.println("Setting retention policy for namespace " + namespace);
+            try {
+                pulsarAdmin.namespaces().setRetention(namespace, policies);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void removeRateLimitation(PulsarAdmin pulsarAdmin, String namespace) {
+            try {
+                System.out.println("Removing rate limitation for namespace: " + namespace);
+                pulsarAdmin.namespaces().removePublishRate(namespace);
+                System.out.println("Rate limitation removed for namespace: " + namespace);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void getRetention(PulsarAdmin pulsarAdmin, String namespace) {
+            try {
+                RetentionPolicies retention = pulsarAdmin.namespaces().getRetention(namespace);
+                if(retention == null) {
+                    System.out.println("No retention policy set for namespace " + namespace);
+                } else {
+                    System.out.println("Retention policy for namespace " + namespace + " is " + retention);
+                }
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void removeRetentionPolicy(PulsarAdmin pulsarAdmin, String namespace) {
+            try {
+                System.out.println("Removing retention policy for namespace " + namespace);
+                pulsarAdmin.namespaces().removeRetention(namespace);
+                System.out.println("Retention policy removed for namespace " + namespace);
+
+                System.out.println("Retention policy removed for namespace " + namespace);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void listBacklogQuotas(PulsarAdmin pulsarAdmin, String namespace) {
+            try {
+
+                Map<BacklogQuota.BacklogQuotaType,BacklogQuota> quotas = pulsarAdmin.namespaces().getBacklogQuotaMap(namespace);
+
+                System.out.println("Backlog quotas for namespace " + namespace + " : ");
+                quotas.forEach((a,b) -> System.out.println(a + " " + b));
+                if (quotas.isEmpty()) System.out.println("No quotas found for namespace " + namespace);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void createBacklogQuota(PulsarAdmin pulsarAdmin, String namespace) {
+
+            Long limitSize = 100L;
+            int limitTime = 300; //seconds
+            BacklogQuota.RetentionPolicy policy = BacklogQuota.RetentionPolicy.producer_request_hold;
+            BacklogQuota myBacklog = new BacklogQuotaImpl(limitSize,limitTime,policy);
+            try {
+                pulsarAdmin.namespaces().setBacklogQuota(namespace, myBacklog);
+                System.out.println("Backlog quota set for namespace " + namespace);
+
+                //pulsarAdmin.namespaces().setBacklogQuota(namespace, new BacklogQuota(limit, limitTime, policy));
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void removeBacklogQuota(PulsarAdmin pulsarAdmin, String namespace) {
+            try {
+                System.out.println("Removing backlog quota for namespace " + namespace);
+                pulsarAdmin.namespaces().removeBacklogQuota(namespace);
+                System.out.println("Backlog quota removed for namespace " + namespace);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private static void limitMaxPublishRateTo1(PulsarAdmin pulsarAdmin, String namespace) {
+            try {
+                System.out.println("Limiting max publish rate to 1 message per second");
+                //1 message per second
+                PublishRate msgPubRate = new PublishRate(1,10000);
+
+                pulsarAdmin.namespaces().setPublishRate(namespace, msgPubRate);
+                System.out.println("Limiting Done");
+
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+
     }
 
+    private static class Tenant {
+
+        private static void getTenantInfo(PulsarAdmin pulsarAdmin, String tenant) {
+
+            try {
+                TenantInfo tenantInfo = pulsarAdmin.tenants().getTenantInfo(tenant);
+                System.out.println(tenantInfo);
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private static class Cluster {
+        private static void listClusterAndBrokers(PulsarAdmin pulsarAdmin) {
+            try {
+                List<String> clusters = pulsarAdmin.clusters().getClusters();
+                clusters.forEach(cluster -> {
+                    try {
+                        System.out.println("Cluster: " + cluster + "\n ");
+                        List<String> brokers = pulsarAdmin.brokers().getActiveBrokers(cluster);
+                        brokers.forEach(broker -> {
+                            System.out.println("Broker: " + broker);
+                        });
+                    } catch (PulsarAdminException e) {
+                        e.printStackTrace();
+                    }
+                });
+            } catch (PulsarAdminException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
