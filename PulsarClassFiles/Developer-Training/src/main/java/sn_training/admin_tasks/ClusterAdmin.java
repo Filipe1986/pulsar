@@ -16,12 +16,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static sn_training.Config.*;
+import static sn_training.ConfigLocal.PULSAR_ADMIN_URL;
 
-/**
- * mvn compile exec:java@cluster_admin
- * <p>
- * Use JAVA Admin API against cluster
- **/
 public class ClusterAdmin {
 
     public static PulsarAdmin createAdmin() {
@@ -30,6 +26,23 @@ public class ClusterAdmin {
         try {
             pulsarAdmin = PulsarAdmin.builder()
                     .authentication(getAuth())
+                    .serviceHttpUrl(PULSAR_ADMIN_URL)
+                    //.tlsTrustCertsFilePath(tlsTrustCertsFilePath)
+                    .allowTlsInsecureConnection(false)
+                    .build();
+        } catch (PulsarClientException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Returning createAdmin");
+        return pulsarAdmin;
+    }
+
+    public static PulsarAdmin createLocalAdmin() {
+        System.out.println("Starting createAdmin");
+        PulsarAdmin pulsarAdmin = null;
+        try {
+            pulsarAdmin = PulsarAdmin.builder()
+                    //.authentication(getAuth())
                     .serviceHttpUrl(PULSAR_ADMIN_URL)
                     //.tlsTrustCertsFilePath(tlsTrustCertsFilePath)
                     .allowTlsInsecureConnection(false)
@@ -55,6 +68,7 @@ public class ClusterAdmin {
     public static void main(String[] args) {
 
         PulsarAdmin pulsarAdmin = createAdmin();
+        //PulsarAdmin pulsarAdmin = createLocalAdmin();
 
 
 
@@ -195,7 +209,6 @@ public class ClusterAdmin {
         }
     }
 
-
     private static class Subscription {
         private static void remove(PulsarAdmin pulsarAdmin, String topic, String subscriptionName) {
             try {
@@ -205,7 +218,6 @@ public class ClusterAdmin {
             }
         }
     }
-
 
     private static class Namespace {
 
